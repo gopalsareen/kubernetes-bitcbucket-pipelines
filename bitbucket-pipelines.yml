@@ -1,0 +1,31 @@
+#pipline
+image: atlassian/default-image:latest
+
+pipelines:
+  default:
+    - step:
+        name: Build
+        script:
+          # generate docker image name
+          - export IMAGE_NAME=$DOCKER_USERNAME/$BITBUCKET_REPO_SLUG:$BITBUCKET_COMMIT
+          # build the Docker image
+          - docker build -t $IMAGE_NAME . --build-arg commit_hash=$BITBUCKET_COMMIT
+          # authenticate with the Docker Hub registry
+          - docker login --username $DOCKER_USERNAME --password $DOCKER_PASSWORD
+          # push the new Docker image to the Docker registry
+          - docker push $IMAGE_NAME
+        services:
+          - docker
+        caches:
+          - docker
+    - step:
+        name: Deploy
+        deployment: testing
+        script:
+          - pipe: atlassian/ssh-run:0.2.5
+            variables:
+              SSH_USER: $SSH_USER
+              SERVER: $SERVER_ADDRESS
+              PORT: $PORT
+              #COMMAND: 'kubectl set image deployment/php php=$DOCKER_USERNAME/$BITBUCKET_REPO_SLUG:$BITBUCKET_COMMIT'
+              COMMAND: 'sed  "s|{{image}}|$DOCKER_USERNAME/$BITBUCKET_REPO_SLUG:$BITBUCKET_COMMIT|g" ~/php-app/php_deployment.yaml | kubectl apply -f  -'
