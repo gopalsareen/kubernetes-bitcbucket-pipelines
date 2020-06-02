@@ -1,7 +1,7 @@
 # Deploy php application to kubernetes using bitbucket pipelines
 
 
-###Setup docker registry access for kubernetes to pull image from private repo
+### Setup docker registry access for kubernetes to pull image from private repo
 
 1) Login to docker hub with username and password:
     
